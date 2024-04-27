@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple Chat App</title>
+    <link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f8f9fa;
+        }
+
+        .container {
+            background-color: #ffffff;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            max-width: 800px;
+            height: 80vh;
+        }
+
+        #chat-box {
+            max-height: 70%;
+            overflow-y: auto;
+            border: 1px solid #ced4da;
+            border-radius: 5px;
+            padding: 10px;
+            background-color: #f5f5f5;
+
+
+            display: flex;
+            flex-direction: column;
+
+
+
+        }
+
+        .message {
+            margin-bottom: 10px;
+            padding: 10px;
+            border-radius: 5px;
+
+            word-wrap: break-word;
+
+        }
+
+        .message.sent {
+            background-color: #007bff;
+            color: #fff;
+            align-self: flex-end;
+            width: fit-content;
+            max-width: 80%;
+            float: right;
+        }
+
+        .message.received {
+            background-color: #28a745;
+            color: #fff;
+            width: fit-content;
+            max-width: 80%;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        form {
+            display: flex;
+            flex-direction: column;
+        }
+
+        label {
+            font-weight: bold;
+        }
+
+        button {
+            align-self: flex-end;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container mt-5">
+        <h1 class="mb-4">AryCodes Chat App</h1>
+        <div id="chat-box" class="mb-3"></div>
+        <form id="chat-form">
+
+            <div class="form-group">
+                <label for="message">Message:</label>
+                <input type="text" id="message" class="form-control" required>
+            </div>
+            <button type="submit" class="btn btn-primary">Send</button>
+        </form>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+
+    <script>
+        $(document).ready(function () {
+            const chatBox = $('#chat-box');
+            const chatForm = $('#chat-form');
+
+            const username = prompt("Please enter your username:");
+
+            const socket = io.connect('http://' + document.domain + ':' + location.port);
+
+            if (username) {
+                const data = {
+                    username: username,
+                    message: `${username} joined the chat`,
+                };
+
+                socket.emit('message', data);
+
+                $('#message').val('');
+            }
+
+            function appendMessage(message, isSent) {
+                const messageClass = isSent ? 'sent' : 'received';
+                const div = $('<div class="message"></div>').addClass(messageClass).text(`${message.username}: ${message.message}`);
+                chatBox.append(div);
+            }
+
+            socket.on('update_chat', function (messages) {
+                chatBox.html('');
+                messages.forEach(message => {
+                    const isSent = message.username === username;
+                    appendMessage(message, isSent);
+                });
+            });
+
+            chatForm.submit(function (event) {
+                event.preventDefault();
+                const message = $('#message').val();
+
+                if (message) {
+                    const data = {
+                        username: username,
+                        message: message,
+                    };
+
+                    socket.emit('message', data);
+
+                    $('#message').val('');
+                }
+            });
+        });
+    </script>
+</body>
+
+</html>
